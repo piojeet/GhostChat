@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "545143973570",
+    "project_id": "ghostchat-b90c2",
+    "storage_bucket": "ghostchat-b90c2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:545143973570:android:d9bb6f7b5c05575cf03d5b",
+        "android_client_info": {
+          "package_name": "com.ghostchat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyClYfuXwW9Y3M7t2uoDMm69keVuOz0ZcZk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

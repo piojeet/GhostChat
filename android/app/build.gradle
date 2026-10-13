@@ -1,6 +1,17 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
+apply plugin: "com.google.gms.google-services"
+apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
+
+def releaseProperty = { String name ->
+    def value = findProperty(name) ?: System.getenv(name)
+    value?.toString()?.trim()
+}
+def releaseStoreFilePath = releaseProperty("RELEASE_STORE_FILE")
+def releaseStorePassword = releaseProperty("RELEASE_STORE_PASSWORD")
+def releaseKeyAlias = releaseProperty("RELEASE_KEY_ALIAS")
+def releaseKeyPassword = releaseProperty("RELEASE_KEY_PASSWORD")
 
 /**
  * This is the configuration block to customize your React Native Android app.
@@ -77,9 +88,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.snapapp"
+    namespace "com.ghostchat"
     defaultConfig {
-        applicationId "com.snapapp"
+        applicationId "com.ghostchat"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -92,19 +103,91 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            if (releaseStoreFilePath) {
+                storeFile file(releaseStoreFilePath)
+            }
+            if (releaseStorePassword) {
+                storePassword releaseStorePassword
+            }
+            if (releaseKeyAlias) {
+                keyAlias releaseKeyAlias
+            }
+            if (releaseKeyPassword) {
+                keyPassword releaseKeyPassword
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
+            manifestPlaceholders = [usesCleartextTraffic: "true"]
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
+            manifestPlaceholders = [usesCleartextTraffic: "false"]
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
     }
+}
+
+def validateReleaseConfiguration = tasks.register("validateReleaseConfiguration") {
+    group = "verification"
+    description = "Checks that the release uses a public HTTPS API and an external release keystore."
+    doLast {
+        def problems = []
+        def apiBaseUrl = project.ext.has("env")
+            ? project.ext.env.get("API_BASE_URL")?.trim()
+            : null
+
+        if (!apiBaseUrl) {
+            problems << "Set API_BASE_URL in the root .env file to the public HTTPS API URL ending in /api."
+        } else {
+            try {
+                def apiUri = new URI(apiBaseUrl)
+                def hostname = apiUri.host?.toLowerCase()?.replaceAll(/^\[|\]$/, "")
+                def apiPath = apiUri.path?.replaceAll(/\/+$/, "") ?: ""
+                def isLocalHost = hostname == null ||
+                    hostname == "localhost" ||
+                    hostname.endsWith(".localhost") ||
+                    hostname.endsWith(".local") ||
+                    hostname == "::" ||
+                    hostname == "::1" ||
+                    hostname ==~ /^(fc|fd)[0-9a-f:]*$/ ||
+                    hostname.startsWith("fe80:") ||
+                    hostname ==~ /^(0|10|127|192\.168)\..*/ ||
+                    hostname ==~ /^172\.(1[6-9]|2[0-9]|3[01])\..*/
+                if (!apiUri.scheme?.equalsIgnoreCase("https") ||
+                    isLocalHost ||
+                    apiUri.userInfo ||
+                    !apiPath.endsWith("/api")) {
+                    problems << "API_BASE_URL must use HTTPS and must not point to localhost, an emulator, or a private network."
+                }
+            } catch (java.net.URISyntaxException ignored) {
+                problems << "API_BASE_URL must be a valid public HTTPS URL ending in /api."
+            }
+        }
+
+        if (!releaseStoreFilePath || !releaseStorePassword || !releaseKeyAlias || !releaseKeyPassword) {
+            problems << "Configure RELEASE_STORE_FILE, RELEASE_STORE_PASSWORD, RELEASE_KEY_ALIAS, and RELEASE_KEY_PASSWORD outside the repository."
+        } else {
+            def keystoreFile = file(releaseStoreFilePath).canonicalFile
+            def repositoryDirectory = rootProject.projectDir.parentFile.canonicalFile
+            if (!keystoreFile.isFile()) {
+                problems << "RELEASE_STORE_FILE must point to an existing release keystore."
+            } else if (keystoreFile.toPath().startsWith(repositoryDirectory.toPath())) {
+                problems << "Keep the release keystore outside the repository."
+            }
+        }
+
+        if (!problems.isEmpty()) {
+            throw new GradleException("Android release configuration is incomplete:\n - " + problems.join("\n - "))
+        }
+    }
+}
+tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+    dependsOn(validateReleaseConfiguration)
 }
 
 dependencies {
@@ -117,3 +200,4 @@ dependencies {
         implementation jscFlavor
     }
 }
+apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")

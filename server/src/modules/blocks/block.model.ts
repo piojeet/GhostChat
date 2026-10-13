@@ -1,0 +1,16 @@
+import { Schema, model, type InferSchemaType } from 'mongoose';
+
+const blockSchema = new Schema(
+  {
+    blocker: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    blocked: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  },
+  { timestamps: true },
+);
+
+blockSchema.index({ blocker: 1, blocked: 1 }, { unique: true });
+blockSchema.index({ blocked: 1, blocker: 1 });
+
+export type BlockDocument = InferSchemaType<typeof blockSchema>;
+
+export const Block = model('Block', blockSchema);

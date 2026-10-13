@@ -1,0 +1,21 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "src/assets/fonts/inter/inter-latin-400-normal.ttf",
+      "sha1": "819410159d3cbd4e70d187d3cd1f3f6838701a49"
+    },
+    {
+      "path": "src/assets/fonts/inter/inter-latin-500-normal.ttf",
+      "sha1": "f18d9b744925310b496946789ce57028c26f18da"
+    },
+    {
+      "path": "src/assets/fonts/inter/inter-latin-600-normal.ttf",
+      "sha1": "d079940418ab50f48a9004e705af97a0ebb24efd"
+    },
+    {
+      "path": "src/assets/fonts/inter/inter-latin-700-normal.ttf",
+      "sha1": "6c478500bd83ea67841512e0855dcf066a626d47"
+    }
+  ]
+}

@@ -62,6 +62,13 @@ If everything is set up correctly, you should see your new app running in the An
 
 This is one way to run your app — you can also build it directly from Android Studio or Xcode.
 
+## Android friend-testing release
+
+Release builds require a deployed public HTTPS backend and an external release
+keystore. See [the Android test-release guide](./docs/android-test-release.md)
+for backend environment variables, secure signing setup, the release build
+command, and two-account device testing.
+
 ## Step 3: Modify your app
 
 Now that you have successfully run the app, let's make changes!
