@@ -44,16 +44,16 @@ origin from the API base URL.
 
 ## Configure and sign the Android release
 
-Set the ignored root `.env` file's `API_BASE_URL` to the deployed endpoint,
-including `/api`, for example:
+Set `API_BASE_URL` in an ignored release-specific `.env.release` file to the
+deployed endpoint, including `/api`, for example:
 
 ```dotenv
 API_BASE_URL=https://api.example.com/api
 ```
 
-Do not commit `.env`. Do not put backend credentials, service-account paths,
-keystore passwords, or private keys in it; React Native config values are
-packaged into the app.
+Keep `.env.release` and `.env` out of Git. Do not put backend credentials,
+service-account paths, keystore passwords, or private keys in either file;
+React Native config values are packaged into the app.
 
 If no release key exists, create a **new test-release key only after choosing
 and protecting a secure backup location outside the repository**. Do not
@@ -76,11 +76,25 @@ RELEASE_KEY_ALIAS=ghostchat
 RELEASE_KEY_PASSWORD=<key password>
 ```
 
-Build the installable APK from the repository root:
+This workspace now has a dedicated friend-testing key at
+`%USERPROFILE%\ghostchat-friend-testing.p12`; its randomly generated signing
+values are stored in `%USERPROFILE%\.gradle\gradle.properties` with restricted
+Windows permissions. Back up the key and its matching signing settings
+securely. This is a test-distribution key, not a production/Play App Signing
+key; do not publish it or commit either file.
+
+Build the installable APK from the repository root, selecting the release
+configuration without changing the local development `.env`:
 
 ```powershell
-.\android\gradlew.bat -p android :app:assembleRelease
+$env:ENVFILE = ".env.release"
+.\android\gradlew.bat -p android :app:assembleRelease -PreactNativeDevServerIp=disabled
+$env:ENVFILE = $null
 ```
+
+The `reactNativeDevServerIp` override prevents React Native from embedding the
+build machine's LAN address in the release resources. Release builds have
+developer support disabled and use the HTTPS API URL above.
 
 The generated APK is
 `android\app\build\outputs\apk\release\app-release.apk`. The release build

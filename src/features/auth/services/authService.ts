@@ -24,12 +24,16 @@ type OtpInput = {
   otp: string;
 };
 
+const LOGIN_TIMEOUT_MS = 90_000;
+
 export const authService = {
   async login(input: LoginInput): Promise<AuthResult> {
     const result = await apiRequest<AuthResult>('/auth/login', {
       method: 'POST',
       authenticated: false,
       body: input,
+      timeoutMs: LOGIN_TIMEOUT_MS,
+      diagnosticName: 'auth.login',
     });
     await setAuthTokens(result);
     return result;

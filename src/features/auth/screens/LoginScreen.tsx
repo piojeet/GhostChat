@@ -1,5 +1,5 @@
 import { adaptThemeColor, adaptThemeClassName } from '../../../theme/systemTheme';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -18,6 +18,7 @@ import SocialLoginButton from '../../../assets/icons/social/SocialLoginButton';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../../../types/navigation';
 import { authService } from '../services/authService';
+import { ApiError } from '../../../services/api/apiError';
 
 const contentContainerStyle = {
   flexGrow: 1,
@@ -35,8 +36,10 @@ const LoginScreen = ({ navigation, onAuthenticated }: Props) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const loginInProgress = useRef(false);
 
   const handleLogin = async () => {
+    if (loginInProgress.current) return;
     if (!email.trim() || !password) {
       Alert.alert(
         'Missing details',
@@ -45,16 +48,31 @@ const LoginScreen = ({ navigation, onAuthenticated }: Props) => {
       return;
     }
 
+    loginInProgress.current = true;
     setIsLoading(true);
     try {
       await authService.login({ email: email.trim(), password });
       onAuthenticated?.();
     } catch (error) {
+      const message = error instanceof ApiError
+        ? error.code === 'REQUEST_TIMEOUT'
+          ? 'The server took too long to respond. Please check your connection and try again.'
+          : error.code === 'NETWORK_ERROR'
+            ? 'Unable to reach the server. Check your internet connection and API address.'
+            : error.code === 'REQUEST_ABORTED'
+              ? 'The sign-in request was cancelled. Please try again.'
+              : error.status >= 500
+                ? 'The server encountered an error. Please try again later.'
+                : error.message
+        : error instanceof Error
+          ? error.message
+          : 'Unable to sign in. Please try again.';
       Alert.alert(
         'Sign in failed',
-        error instanceof Error ? error.message : 'Unable to sign in. Please try again.',
+        message,
       );
     } finally {
+      loginInProgress.current = false;
       setIsLoading(false);
     }
   };

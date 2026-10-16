@@ -42,6 +42,9 @@ server/dist/
 npm-debug.log
 yarn-error.log
 .env
+.env.*
+!.env.example
+!**/.env.example
 **/firebase-service-account*.json
 ios/tmp.xcconfig
 
